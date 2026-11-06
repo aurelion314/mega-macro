@@ -369,6 +369,16 @@ local function HandleReceiveDrag(targetScope)
 		else
 			ClearCursor()
 			local name, _, body = GetMacroInfo(macroIndex)
+
+			-- Native macro indexes change when macros are added, so note where this one is used first
+			local actionSlots = {}
+			for i=1, 120 do
+				local actionButtonType, actionButtonArg = GetActionInfo(i)
+				if actionButtonType == "macro" and actionButtonArg == macroIndex then
+					table.insert(actionSlots, i)
+				end
+			end
+
 			local newMacro = MegaMacro.Create(name, targetScope, MegaMacroTexture)
 
 			if newMacro then
@@ -378,21 +388,18 @@ local function HandleReceiveDrag(targetScope)
 			SetMacroItems()
 			SelectMacro(newMacro)
 
-			if not InCombatLockdown() then
+			if newMacro and not InCombatLockdown() then
 				local newMacroIndex = MegaMacroEngine.GetMacroIndexFromId(newMacro.Id)
 				if newMacroIndex then
-					for i=1, 120 do
-						local actionButtonType, actionButtonArg = GetActionInfo(i)
-						if actionButtonType == "macro" and actionButtonArg == macroIndex then
-							PickupMacro(newMacroIndex)
-							PlaceAction(i)
-							ClearCursor()
-						end
+					for _, actionSlot in ipairs(actionSlots) do
+						PickupMacro(newMacroIndex)
+						PlaceAction(actionSlot)
+						ClearCursor()
 					end
 				end
 
 				-- Blizzard's macro window, if open, refreshes itself from UPDATE_MACROS
-				DeleteMacro(macroIndex)
+				MegaMacroEngine.DeleteNativeMacro(name, body)
 			end
 		end
 	end

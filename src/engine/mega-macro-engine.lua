@@ -466,6 +466,19 @@ function MegaMacroEngine.GetMacroIdFromIndex(macroIndex)
     return nil
 end
 
+-- Finds the macro by its contents, as its index may have changed since it was last looked up
+function MegaMacroEngine.DeleteNativeMacro(name, code)
+    for i=1, MacroLimits.MaxGlobalMacros + MacroLimits.MaxCharacterMacros do
+        local macroName, _, macroCode = GetMacroInfo(i)
+
+        if macroName == name and macroCode == code then
+            DeleteMacro(i)
+            InitializeMacroIndexCache()
+            return
+        end
+    end
+end
+
 function MegaMacroEngine.GetMacroIndexFromId(macroId)
     return MacroIndexCache[macroId]
 end
