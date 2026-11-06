@@ -1,4 +1,6 @@
 local FetchesPerFrame = 1000
+-- Spell IDs have large gaps, so only give up after a long run of IDs with no spell
+local MaxConsecutiveMisses = 100000
 
 local IconLoadingStarted = false
 local MissCount = 0
@@ -7,7 +9,7 @@ local IconLoadingFinished = false
 local CleanupPhase = false
 
 local IconCache = {}
-IconCacheKeys = {}
+local IconCacheKeys = {}
 
 local function AddRange(self, otherTable)
     local selfLength = #self
@@ -91,10 +93,10 @@ function MegaMacroIconNavigator.OnUpdate()
         for _=1, FetchesPerFrame do
             CurrentSpellId = CurrentSpellId + 1
             local spellInfo = C_Spell.GetSpellInfo(CurrentSpellId)
-            if (spellInfo == nil) then
-                return
+            local name, icon, spellId
+            if spellInfo then
+                name, icon, spellId = spellInfo.name, spellInfo.iconID, spellInfo.spellID
             end
-            local name, _, icon, _, _, _, spellId = spellInfo.name, nil, spellInfo.iconID, spellInfo.castTime, spellInfo.minRange, spellInfo.maxRange, spellInfo.spellID
 
             if icon == 136243 then
                 -- 136243 is the a gear icon, we can ignore those spells (courtesy of WeakAuras)
@@ -111,7 +113,7 @@ function MegaMacroIconNavigator.OnUpdate()
                     end
                     local hasIcon = false
                     for i=1, #cachedIconList do
-                        if cachedIconList[i] == icon then
+                        if cachedIconList[i].Icon == icon then
                             hasIcon = true
                             break
                         end
@@ -123,7 +125,7 @@ function MegaMacroIconNavigator.OnUpdate()
             else
                 MissCount = MissCount + 1
 
-                if MissCount > 400 then
+                if MissCount > MaxConsecutiveMisses then
                     table.sort(IconCacheKeys)
                     IconLoadingFinished = true
                     CleanupPhase = true
