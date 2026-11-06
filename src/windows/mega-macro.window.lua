@@ -345,7 +345,10 @@ local function HandleReceiveDrag(targetScope)
 			local macro = MegaMacro.GetById(macroId)
 			ClearCursor()
 
-			if IsControlKeyDown() then
+			if not macro then
+				-- The game's macro still has our ID, but the saved data it points to is gone
+				print("Mega Macro: Can't use this macro because its saved data is missing.")
+			elseif IsControlKeyDown() then
 				local newDisplayName = macro.Scope == targetScope and macro.DisplayName.." copy" or macro.DisplayName
 				local newMacro = MegaMacro.Create(newDisplayName, targetScope, macro.StaticTexture)
 				MegaMacro.UpdateCode(newMacro, macro.Code)
